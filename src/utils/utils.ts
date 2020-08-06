@@ -39,6 +39,8 @@ export const getAuthorityFromRouter = <T extends Route>(
       (path && target !== '_blank' && pathRegexp(path).exec(pathname)) ||
       (routes && getAuthorityFromRouter(routes, pathname)),
   );
+  console.log('getRouteAuthority', pathname)
+
   if (authority) return authority;
   return undefined;
 };
@@ -61,5 +63,6 @@ export const getRouteAuthority = (path: string, routeData: Route[]) => {
       }
     }
   });
+  console.log('getRouteAuthority')
   return authorities;
 };

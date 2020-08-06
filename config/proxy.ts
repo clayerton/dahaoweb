@@ -7,8 +7,8 @@
  */
 export default {
   dev: {
-    '/api/': {
-      target: 'https://preview.pro.ant.design',
+    '/core/': {
+      target: 'http://core.alpha.dahaoyun.net',
       changeOrigin: true,
       pathRewrite: { '^': '' },
     },

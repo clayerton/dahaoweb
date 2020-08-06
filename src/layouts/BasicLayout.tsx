@@ -17,7 +17,8 @@ import Authorized from '@/utils/Authorized';
 import RightContent from '@/components/GlobalHeader/RightContent';
 import { ConnectState } from '@/models/connect';
 import { getAuthorityFromRouter } from '@/utils/utils';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
+import styles from './BasicLayout.less';
 
 const noMatch = (
   <Result
@@ -40,6 +41,8 @@ export interface BasicLayoutProps extends ProLayoutProps {
   };
   settings: Settings;
   dispatch: Dispatch;
+
+  routes: []
 }
 export type BasicLayoutContext = { [K in 'location']: BasicLayoutProps[K] } & {
   breadcrumbNameMap: {
@@ -59,32 +62,6 @@ const menuDataRender = (menuList: MenuDataItem[]): MenuDataItem[] =>
     return Authorized.check(item.authority, localItem, null) as MenuDataItem;
   });
 
-const defaultFooterDom = (
-  <DefaultFooter
-    copyright={`${new Date().getFullYear()} 蚂蚁金服体验技术部出品`}
-    links={[
-      {
-        key: 'Ant Design Pro',
-        title: 'Ant Design Pro',
-        href: 'https://pro.ant.design',
-        blankTarget: true,
-      },
-      {
-        key: 'github',
-        title: <GithubOutlined />,
-        href: 'https://github.com/ant-design/ant-design-pro',
-        blankTarget: true,
-      },
-      {
-        key: 'Ant Design',
-        title: 'Ant Design',
-        href: 'https://ant.design',
-        blankTarget: true,
-      },
-    ]}
-  />
-);
-
 const BasicLayout: React.FC<BasicLayoutProps> = (props) => {
   const {
     dispatch,
@@ -93,17 +70,22 @@ const BasicLayout: React.FC<BasicLayoutProps> = (props) => {
     location = {
       pathname: '/',
     },
+    routes,
   } = props;
   /**
    * constructor
    */
-
   useEffect(() => {
-    if (dispatch) {
-      dispatch({
-        type: 'user/fetchCurrent',
-      });
-    }
+    // if (dispatch) {
+    //   dispatch({
+    //     type: 'user/fetchCurrent',
+    //   });
+    // }
+    dispatch({
+      type: 'menu/fetch',
+      payload: { routes },
+    });
+    
   }, []);
   /**
    * init variables
@@ -150,8 +132,10 @@ const BasicLayout: React.FC<BasicLayoutProps> = (props) => {
           <span>{route.breadcrumbName}</span>
         );
       }}
-      footerRender={() => defaultFooterDom}
+      // footerRender={() => defaultFooterDom}
       menuDataRender={menuDataRender}
+      disableContentMargin={true}
+      className={styles.main}
       rightContentRender={() => <RightContent />}
       {...props}
       {...settings}
@@ -163,7 +147,9 @@ const BasicLayout: React.FC<BasicLayoutProps> = (props) => {
   );
 };
 
-export default connect(({ global, settings }: ConnectState) => ({
+export default connect(({ global, settings, menu: menuModel }: ConnectState) => ({
   collapsed: global.collapsed,
   settings,
+  breadcrumbNameMap: menuModel.breadcrumbNameMap,
+
 }))(BasicLayout);

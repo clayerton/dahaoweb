@@ -1,10 +1,10 @@
 import { stringify } from 'querystring';
 import { history, Reducer, Effect } from 'umi';
+import { authNameByCompany, COMPANY_TYPE, jumpToNextScreen, setAuthority } from '@/utils/authority';
 
 import { fakeAccountLogin } from '@/services/login';
-import { setAuthority } from '@/utils/authority';
 import { getPageQuery } from '@/utils/utils';
-
+import {unit} from '@/services/user';
 export interface StateType {
   status?: 'ok' | 'error';
   type?: string;
@@ -17,6 +17,7 @@ export interface LoginModelType {
   effects: {
     login: Effect;
     logout: Effect;
+    unit: Effect;
   };
   reducers: {
     changeLoginStatus: Reducer<StateType>;
@@ -33,48 +34,47 @@ const Model: LoginModelType = {
   effects: {
     *login({ payload }, { call, put }) {
       const response = yield call(fakeAccountLogin, payload);
+      console.log(response)
       yield put({
         type: 'changeLoginStatus',
         payload: response,
       });
       // Login successfully
-      if (response.status === 'ok') {
-        const urlParams = new URL(window.location.href);
-        const params = getPageQuery();
-        let { redirect } = params as { redirect: string };
-        if (redirect) {
-          const redirectUrlParams = new URL(redirect);
-          if (redirectUrlParams.origin === urlParams.origin) {
-            redirect = redirect.substr(urlParams.origin.length);
-            if (redirect.match(/^\/.*#/)) {
-              redirect = redirect.substr(redirect.indexOf('#') + 1);
-            }
-          } else {
-            window.location.href = '/';
-            return;
-          }
-        }
-        history.replace(redirect || '/');
+      if (response) {
+        localStorage.setItem('userId', response.user.id); // 页面显示判断的值
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user)); // 存用户   localstorage存对象需要把对象转成字符串
+        localStorage.setItem('role', JSON.stringify(response.user.role)); // 存角色
+        localStorage.setItem('company', JSON.stringify(response.company)); // 工厂
+        const unitResponse = yield call(unit, {});
+        try {
+          localStorage.setItem('unit', JSON.stringify(unitResponse.items)); // 页面显示判断的值
+        } catch (e) {}
+        yield put({ type: 'authHandle', payload: authNameByCompany(response.company) });
+        yield put({ type: 'accountHandle', payload: response.user });
+
+        jumpToNextScreen(authNameByCompany(response.company));
       }
     },
 
-    logout() {
-      const { redirect } = getPageQuery();
-      // Note: There may be security issues, please note
-      if (window.location.pathname !== '/user/login' && !redirect) {
-        history.replace({
-          pathname: '/user/login',
-          search: stringify({
-            redirect: window.location.href,
-          }),
-        });
+    *logout({}, {put}) {
+     
+      yield put({ type: 'authHandle', payload: COMPANY_TYPE.none });
+      yield put({ type: 'accountHandle', payload: null });
+      localStorage.clear();
+      history.push('/user/login');
+    },
+    *unit({}, { call, put }) {
+      const response = yield call(unit, {});
+      if (response) {
+        localStorage.setItem('unit', JSON.stringify(response.items)); // 页面显示判断的值
       }
     },
   },
 
   reducers: {
     changeLoginStatus(state, { payload }) {
-      setAuthority(payload.currentAuthority);
+      setAuthority(payload);
       return {
         ...state,
         status: payload.status,

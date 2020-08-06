@@ -1,19 +1,16 @@
-import request from '@/utils/request';
+import request from '@/utils/myRequest';
+const core = 'http://core.alpha.dahaoyun.net';
 
 export interface LoginParamsType {
-  userName: string;
+  user: string;
   password: string;
   mobile: string;
   captcha: string;
 }
 
 export async function fakeAccountLogin(params: LoginParamsType) {
-  return request('/api/login/account', {
+  return request('/core/api/v1/user/login', {
     method: 'POST',
     data: params,
   });
-}
-
-export async function getFakeCaptcha(mobile: string) {
-  return request(`/api/login/captcha?mobile=${mobile}`);
 }
